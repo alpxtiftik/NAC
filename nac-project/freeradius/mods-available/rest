@@ -1,0 +1,48 @@
+rest {
+    tls {
+        ca_file     =
+        ca_path     =
+        certificate_file =
+        private_key_file =
+        random_file =
+        check_cert  = no
+        check_cert_cn = no
+    }
+
+    connect_uri = "http://api:8000"
+
+    authorize {
+        uri        = "${..connect_uri}/auth"
+        method     = "post"
+        body       = "json"
+        data       = "{\"username\": \"%{User-Name}\", \"password\": \"%{User-Password}\"}"
+        tls        = ${..tls}
+    }
+
+    authenticate {
+        uri        = "${..connect_uri}/auth"
+        method     = "post"
+        body       = "json"
+        data       = "{\"username\": \"%{User-Name}\", \"password\": \"%{User-Password}\"}"
+        tls        = ${..tls}
+    }
+
+    accounting {
+        uri        = "${..connect_uri}/accounting"
+        method     = "post"
+        body       = "json"
+        data       = "{\
+            \"username\": \"%{User-Name}\",\
+            \"nasipaddress\": \"%{NAS-IP-Address}\",\
+            \"acctsessionid\": \"%{Acct-Session-Id}\",\
+            \"acctuniqueid\": \"%{Acct-Unique-Session-Id}\",\
+            \"acctstatustype\": \"%{Acct-Status-Type}\",\
+            \"acctsessiontime\": %{%{Acct-Session-Time}:-0},\
+            \"acctinputoctets\": %{%{Acct-Input-Octets}:-0},\
+            \"acctoutputoctets\": %{%{Acct-Output-Octets}:-0},\
+            \"acctterminatecause\": \"%{Acct-Terminate-Cause}\",\
+            \"callingstationid\": \"%{Calling-Station-Id}\"\
+        }"
+        tls        = ${..tls}
+    }
+}
