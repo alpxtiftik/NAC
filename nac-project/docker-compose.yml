@@ -45,6 +45,11 @@ services:
         condition: service_healthy
     networks:
       - nac-network
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8000/docs')\""]
+      interval: 5s
+      timeout: 5s
+      retries: 10
 
   freeradius:
     image: freeradius/freeradius-server:latest-3.2
@@ -55,12 +60,14 @@ services:
     volumes:
       - ./freeradius/clients.conf:/etc/freeradius/clients.conf
       - ./freeradius/mods-available/rest:/etc/freeradius/mods-available/rest
-      - ./freeradius/mods-enabled/rest:/etc/freeradius/mods-enabled/rest
       - ./freeradius/sites-available/default:/etc/freeradius/sites-available/default
-      - ./freeradius/sites-enabled/default:/etc/freeradius/sites-enabled/default
+    command: >
+      sh -c "ln -sf /etc/freeradius/mods-available/rest /etc/freeradius/mods-enabled/rest &&
+             ln -sf /etc/freeradius/sites-available/default /etc/freeradius/sites-enabled/default &&
+             freeradius -X"
     depends_on:
       api:
-        condition: service_started
+        condition: service_healthy
     networks:
       - nac-network
 

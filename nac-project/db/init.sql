@@ -1,5 +1,4 @@
--- Uzantı: şifre hashleme için pgcrypto kullanacağız
-CREATE EXTENSION IF NOT EXISTS pgcrypto;
+
 
 -- Kullanıcı kimlik bilgileri tablosu
 -- Her kullanıcı için username, attribute tipi, operatör ve değer tutulur
@@ -58,9 +57,9 @@ CREATE TABLE IF NOT EXISTS radacct (
 -- Örnek kullanıcı verileri
 -- Şifreler pgcrypto ile hashlenmiş (plaintext asla saklanmaz)
 INSERT INTO radcheck (username, attribute, op, value) VALUES
-    ('admin',    'Cleartext-Password', ':=', crypt('admin123',   gen_salt('bf'))),
-    ('employee', 'Cleartext-Password', ':=', crypt('emp123',     gen_salt('bf'))),
-    ('guest',    'Cleartext-Password', ':=', crypt('guest123',   gen_salt('bf')));
+    ('admin',    'Cleartext-Password', ':=', '$2b$12$nkIAw5n9F28iGadeDcEguem4lSXmi6rwU7uKnUM2IgQCbjWLozchK'),
+    ('employee', 'Cleartext-Password', ':=', '$2b$12$eU4bKrbhDP.Q8xqAzCKrbeL64ildQhXbgE4h3Dx49.D4sKiaL50XG'),
+    ('guest',    'Cleartext-Password', ':=', '$2b$12$QLEt0JmoumKymoH0C50.rOxWNwJnARTNT76qV89d8x1X9Mx/2rqmG');
 
 -- Kullanıcıları gruplara ata
 INSERT INTO radusergroup (username, groupname, priority) VALUES

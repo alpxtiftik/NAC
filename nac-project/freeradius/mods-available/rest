@@ -1,22 +1,12 @@
 rest {
-    tls {
-        ca_file     =
-        ca_path     =
-        certificate_file =
-        private_key_file =
-        random_file =
-        check_cert  = no
-        check_cert_cn = no
-    }
-
     connect_uri = "http://api:8000"
+    connect_timeout = 4.0
 
     authorize {
         uri        = "${..connect_uri}/auth"
         method     = "post"
         body       = "json"
         data       = "{\"username\": \"%{User-Name}\", \"password\": \"%{User-Password}\"}"
-        tls        = ${..tls}
     }
 
     authenticate {
@@ -24,7 +14,6 @@ rest {
         method     = "post"
         body       = "json"
         data       = "{\"username\": \"%{User-Name}\", \"password\": \"%{User-Password}\"}"
-        tls        = ${..tls}
     }
 
     accounting {
@@ -43,6 +32,5 @@ rest {
             \"acctterminatecause\": \"%{Acct-Terminate-Cause}\",\
             \"callingstationid\": \"%{Calling-Station-Id}\"\
         }"
-        tls        = ${..tls}
     }
 }
