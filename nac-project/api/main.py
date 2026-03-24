@@ -6,10 +6,7 @@ import json
 
 app = FastAPI(title="NAC Policy Engine")
 
-# ---------------------------------------------------------------
-# /auth  →  Kullanıcı adı + şifre doğrula
-# FreeRADIUS buraya sorar: "Bu adam içeri girebilir mi?"
-# ---------------------------------------------------------------
+
 @app.post("/auth")
 async def authenticate(req: AuthRequest):
     pool = await get_db_pool()
@@ -17,12 +14,10 @@ async def authenticate(req: AuthRequest):
 
     rate_key = f"fail:{req.username}"
 
-    # Rate-limiting: 5 başarısız denemeden sonra 5 dakika kilitle
     fail_count = await redis.get(rate_key)
     if fail_count and int(fail_count) >= 5:
         raise HTTPException(status_code=429, detail="Too many failed attempts")
 
-    # Veritabanından hashlenmiş şifreyi çek
     async with pool.acquire() as conn:
         row = await conn.fetchrow(
             "SELECT value FROM radcheck WHERE username=$1 AND attribute='Cleartext-Password'",
@@ -34,27 +29,20 @@ async def authenticate(req: AuthRequest):
         await redis.expire(rate_key, 300)
         raise HTTPException(status_code=401, detail="User not found")
 
-    # bcrypt ile şifre doğrula
     if not bcrypt.verify(req.password, row["value"]):
         await redis.incr(rate_key)
         await redis.expire(rate_key, 300)
         raise HTTPException(status_code=401, detail="Invalid password")
 
-    # Başarılı giriş: hata sayacını sıfırla
     await redis.delete(rate_key)
     return {"status": "accept"}
 
 
-# ---------------------------------------------------------------
-# /authorize  →  Kullanıcıya hangi VLAN atansın?
-# FreeRADIUS buraya sorar: "Bunu nereye koyalım?"
-# ---------------------------------------------------------------
 @app.post("/authorize")
 async def authorize(req: AuthorizeRequest):
     pool = await get_db_pool()
 
     async with pool.acquire() as conn:
-        # Kullanıcının grubunu bul
         group = await conn.fetchrow(
             "SELECT groupname FROM radusergroup WHERE username=$1",
             req.username
@@ -62,7 +50,6 @@ async def authorize(req: AuthorizeRequest):
         if not group:
             raise HTTPException(status_code=404, detail="User group not found")
 
-        # Grubun VLAN attribute'larını çek
         rows = await conn.fetch(
             "SELECT attribute, op, value FROM radgroupreply WHERE groupname=$1",
             group["groupname"]
@@ -72,10 +59,6 @@ async def authorize(req: AuthorizeRequest):
     return {"group": group["groupname"], "attributes": attributes}
 
 
-# ---------------------------------------------------------------
-# /accounting  →  Oturum verisini kaydet
-# FreeRADIUS buraya söyler: "Bu adam şu kadar kaldı, kaydet"
-# ---------------------------------------------------------------
 @app.post("/accounting")
 async def accounting(req: AccountingRequest):
     pool = await get_db_pool()
@@ -92,7 +75,6 @@ async def accounting(req: AccountingRequest):
             """, req.acctsessionid, req.acctuniqueid, req.username,
                 req.nasipaddress, req.callingstationid)
 
-            # Aktif oturumu Redis'e ekle
             await redis.hset("active_sessions", req.acctuniqueid,
                              json.dumps({"username": req.username,
                                          "nas": req.nasipaddress}))
@@ -110,15 +92,11 @@ async def accounting(req: AccountingRequest):
                 req.acctoutputoctets, req.acctterminatecause,
                 req.acctuniqueid)
 
-            # Aktif oturumdan kaldır
             await redis.hdel("active_sessions", req.acctuniqueid)
 
     return {"status": "ok"}
 
 
-# ---------------------------------------------------------------
-# /users  →  Tüm kullanıcıları listele
-# ---------------------------------------------------------------
 @app.get("/users")
 async def list_users():
     pool = await get_db_pool()
@@ -128,10 +106,6 @@ async def list_users():
         )
     return [{"username": r["username"], "group": r["groupname"]} for r in rows]
 
-
-# ---------------------------------------------------------------
-# /sessions/active  →  Redis'ten aktif oturumları getir
-# ---------------------------------------------------------------
 @app.get("/sessions/active")
 async def active_sessions():
     redis = await get_redis()

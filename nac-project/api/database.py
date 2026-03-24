@@ -5,8 +5,6 @@ import redis.asyncio as aioredis
 DATABASE_URL = os.getenv("DATABASE_URL")
 REDIS_URL = os.getenv("REDIS_URL")
 
-# PostgreSQL bağlantı pool'u
-# Pool: her istek için yeni bağlantı açmak yerine hazır bağlantıları yeniden kullan
 db_pool = None
 
 async def get_db_pool():
@@ -15,7 +13,6 @@ async def get_db_pool():
         db_pool = await asyncpg.create_pool(DATABASE_URL)
     return db_pool
 
-# Redis bağlantısı
 redis_client = None
 
 async def get_redis():

@@ -54,21 +54,16 @@ CREATE TABLE IF NOT EXISTS radacct (
     framedipaddress    INET
 );
 
--- Örnek kullanıcı verileri
--- Şifreler pgcrypto ile hashlenmiş (plaintext asla saklanmaz)
 INSERT INTO radcheck (username, attribute, op, value) VALUES
     ('admin',    'Cleartext-Password', ':=', '$2b$12$nkIAw5n9F28iGadeDcEguem4lSXmi6rwU7uKnUM2IgQCbjWLozchK'),
     ('employee', 'Cleartext-Password', ':=', '$2b$12$eU4bKrbhDP.Q8xqAzCKrbeL64ildQhXbgE4h3Dx49.D4sKiaL50XG'),
     ('guest',    'Cleartext-Password', ':=', '$2b$12$QLEt0JmoumKymoH0C50.rOxWNwJnARTNT76qV89d8x1X9Mx/2rqmG');
 
--- Kullanıcıları gruplara ata
 INSERT INTO radusergroup (username, groupname, priority) VALUES
     ('admin',    'admin',    1),
     ('employee', 'employee', 1),
     ('guest',    'guest',    1);
 
--- Grup bazlı VLAN atamaları
--- Tunnel-Type=13 (VLAN), Tunnel-Medium-Type=6 (802), Tunnel-Private-Group-Id=VLAN ID
 INSERT INTO radgroupreply (groupname, attribute, op, value) VALUES
     ('admin',    'Tunnel-Type',             ':=', '13'),
     ('admin',    'Tunnel-Medium-Type',      ':=', '6'),
